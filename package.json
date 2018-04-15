@@ -1,0 +1,35 @@
+{
+  "name": "japanpost-zipcode",
+  "description": "Japan Post Zipcode",
+  "version": "0.1.0",
+  "author": "@kawanet",
+  "bugs": {
+    "url": "https://github.com/kawanet/japanpost-zipcode/issues"
+  },
+  "dependencies": {
+    "axios": "^0.18.0",
+    "jszip": "^3.1.5",
+    "promisen": "^0.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^9.6.4",
+    "iconv-lite": "^0.4.21",
+    "typescript": "^2.8.1"
+  },
+  "homepage": "https://github.com/kawanet/japanpost-zipcode#readme",
+  "keywords": [
+    "ajaxzip",
+    "japan",
+    "post",
+    "zip"
+  ],
+  "license": "MIT",
+  "main": "lib/ken_all.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kawanet/japanpost-zipcode.git"
+  },
+  "scripts": {
+    "tsc": "./node_modules/.bin/tsc"
+  }
+}

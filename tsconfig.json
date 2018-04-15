@@ -1,0 +1,13 @@
+{
+  "include": [
+    "lib/*.ts"
+  ],
+  "compilerOptions": {
+    "module": "commonjs",
+    "removeComments": false,
+    "target": "ES5",
+    "types": [
+      "node"
+    ]
+  }
+}
