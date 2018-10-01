@@ -23,12 +23,12 @@ export interface KenAllOptions {
     logger?: { warn: (message: string) => void };
 }
 
-export class KenAll {
+export module KenAll {
     /**
      * fetch ZIP file
      */
 
-    static fetchZip(option?: KenAllOptions) {
+    export function fetchZip(option?: KenAllOptions) {
         const logger = option && option.logger;
 
         const req = {
@@ -47,7 +47,7 @@ export class KenAll {
      * extract CSV file from ZIP file
      */
 
-    static extractCSV(option?: KenAllOptions) {
+    export function extractCSV(option?: KenAllOptions) {
         const logger = option && option.logger;
         return access(zipPath).catch(() => {
             return KenAll.fetchZip(option).then(data => {
@@ -71,7 +71,7 @@ export class KenAll {
      * parse raw CSV file
      */
 
-    static parseRawCSV(option?: KenAllOptions) {
+    export function parseRawCSV(option?: KenAllOptions) {
         return KenAll.extractCSV(option).then((data) => {
             return data.split(/\r?\n/).filter(line => {
                 return !!line;
@@ -106,7 +106,7 @@ export class KenAll {
      * load CSV file from cache when available
      */
 
-    static readCachedCSV(option?: KenAllOptions) {
+    export function readCachedCSV(option?: KenAllOptions) {
         const logger = option && option.logger;
 
         return access(jsonPath).catch(() => {
@@ -127,7 +127,7 @@ export class KenAll {
      * parse CSV file
      */
 
-    static readAll(option?: KenAllOptions) {
+    export function readAll(option?: KenAllOptions) {
         return KenAll.readCachedCSV(option).then(array => {
 
             array.forEach(row => {
