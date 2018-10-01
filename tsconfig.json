@@ -1,11 +1,15 @@
 {
   "include": [
-    "lib/*.ts"
+    "lib/*.ts",
+    "test/*.ts"
   ],
   "compilerOptions": {
+    "lib": [
+      "es2015"
+    ],
     "module": "commonjs",
     "removeComments": false,
-    "target": "ES5",
+    "target": "es2016",
     "types": [
       "node"
     ]

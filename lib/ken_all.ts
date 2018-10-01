@@ -1,10 +1,9 @@
-"use strict";
+// ken_all
 
 import axios from "axios"
 import * as fs from "fs"
 import * as iconv from "iconv-lite"
 import * as JSZip from "jszip"
-import * as promisen from "promisen"
 
 const zipURL = "http://www.post.japanpost.jp/zipcode/dl/kogaki/zip/ken_all.zip";
 const tmpPath = __dirname.replace(/[^\/]*\/?$/, "tmp/");
@@ -15,17 +14,21 @@ const jsonPath = tmpPath + "ken_all.json";
 const removeKanaSuffix = new RegExp("(ｲｶﾆｹｲｻｲｶﾞﾅｲﾊﾞｱｲ|.*ﾉﾂｷﾞﾆﾊﾞﾝﾁｶﾞｸﾙﾊﾞｱｲ|\(.*?\))$");
 const removeTextSuffix = new RegExp("(以下に掲載がない場合|.*に番地がくる場合|（.*?）)$");
 
-const readFile = promisen.denodeify(fs.readFile.bind(fs));
-const writeFile = promisen.denodeify(fs.writeFile.bind(fs));
-const access = promisen.denodeify(fs.access.bind(fs));
+// fs.promise
+const readFile = (path: string): Promise<Buffer> => new Promise((ok, ng) => fs.readFile(path, (err, res: Buffer) => (err ? ng(err) : ok(res))));
+const writeFile = (path: string, data): Promise<void> => new Promise((ok, ng) => fs.writeFile(path, data, err => (err ? ng(err) : ok())));
+const access = (path: string): Promise<void> => new Promise((ok, ng) => fs.access(path, err => (err ? ng(err) : ok())));
+
+export interface KenAllOptions {
+    logger?: { warn: (message: string) => void };
+}
 
 export class KenAll {
-
     /**
      * fetch ZIP file
      */
 
-    static fetchZip(option?) {
+    static fetchZip(option?: KenAllOptions) {
         const logger = option && option.logger;
 
         const req = {
@@ -44,7 +47,7 @@ export class KenAll {
      * extract CSV file from ZIP file
      */
 
-    static extractCSV(option?) {
+    static extractCSV(option?: KenAllOptions) {
         const logger = option && option.logger;
         return access(zipPath).catch(() => {
             return KenAll.fetchZip(option).then(data => {
@@ -68,7 +71,7 @@ export class KenAll {
      * parse raw CSV file
      */
 
-    static parseRawCSV(option?) {
+    static parseRawCSV(option?: KenAllOptions) {
         return KenAll.extractCSV(option).then((data) => {
             return data.split(/\r?\n/).filter(line => {
                 return !!line;
@@ -103,7 +106,7 @@ export class KenAll {
      * load CSV file from cache when available
      */
 
-    static readCachedCSV(option?) {
+    static readCachedCSV(option?: KenAllOptions) {
         const logger = option && option.logger;
 
         return access(jsonPath).catch(() => {
@@ -115,7 +118,7 @@ export class KenAll {
         }).then(() => {
             if (logger) logger.warn("reading: " + jsonPath);
             return readFile(jsonPath).then(data => {
-                return JSON.parse(data);
+                return JSON.parse(data + "");
             });
         });
     }
@@ -124,7 +127,7 @@ export class KenAll {
      * parse CSV file
      */
 
-    static readAll(option?) {
+    static readAll(option?: KenAllOptions) {
         return KenAll.readCachedCSV(option).then(array => {
 
             array.forEach(row => {

@@ -1,0 +1,13 @@
+{
+  "include": [
+    "../lib/*.ts"
+  ],
+  "compilerOptions": {
+    "declaration": true,
+    "lib": [
+      "es2015"
+    ],
+    "emitDeclarationOnly": true,
+    "outDir": "."
+  }
+}
