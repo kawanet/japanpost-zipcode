@@ -22,25 +22,37 @@ const access = (path: string): Promise<void> => new Promise((ok, ng) => fs.acces
 
 export type KenAllRow = string[];
 
-export interface KenAllOptions {
-    logger?: { warn: (message: string) => void };
+export interface KenAllLogger {
+    warn: (message: string) => void;
 }
 
-export module KenAll {
+export interface KenAllOptions {
+    logger?: KenAllLogger;
+}
+
+export class KenAll {
+    private readonly logger?: KenAllLogger;
+
+    constructor(options?: KenAllOptions) {
+        this.logger = options && options.logger;
+    }
+
+    protected debug(message: string): void {
+        if (this.logger) this.logger.warn(message);
+    }
+
     /**
      * fetch ZIP file
      */
 
-    export async function fetchZip(option?: KenAllOptions): Promise<ArrayBuffer> {
-        const logger = option && option.logger;
-
+    async fetchZip(): Promise<ArrayBuffer> {
         const req = {
             method: "GET",
             url: zipURL,
             responseType: "arraybuffer"
         };
 
-        if (logger) logger.warn("loading: " + zipURL);
+        this.debug("loading: " + zipURL);
         const res = await axios(req);
         return res.data;
     }
@@ -49,18 +61,16 @@ export module KenAll {
      * extract CSV file from ZIP file
      */
 
-    export async function extractCSV(option?: KenAllOptions): Promise<string> {
-        const logger = option && option.logger;
-
+    async extractCSV(): Promise<string> {
         try {
             await access(zipPath);
         } catch (e) {
-            const data = await KenAll.fetchZip(option);
-            if (logger) logger.warn("writing: " + zipPath);
+            const data = await this.fetchZip();
+            this.debug("writing: " + zipPath);
             await writeFile(zipPath, data);
         }
 
-        if (logger) logger.warn("reading: " + zipPath);
+        this.debug("reading: " + zipPath);
         const data = await readFile(zipPath);
         const zip = await JSZip.loadAsync(data);
         const ab = await zip.file(csvName).async("arraybuffer");
@@ -72,8 +82,8 @@ export module KenAll {
      * parse raw CSV file
      */
 
-    export async function parseRawCSV(option?: KenAllOptions): Promise<KenAllRow[]> {
-        const data = await KenAll.extractCSV(option);
+    private async parseRawCSV(): Promise<KenAllRow[]> {
+        const data = await this.extractCSV();
 
         const rows = data.split(/\r?\n/)
             .filter(line => line)
@@ -104,19 +114,17 @@ export module KenAll {
      * load CSV file from cache when available
      */
 
-    export async function readCachedCSV(option?: KenAllOptions): Promise<KenAllRow[]> {
-        const logger = option && option.logger;
-
+    private async readCachedCSV(): Promise<KenAllRow[]> {
         try {
             await access(jsonPath);
         } catch (e) {
-            const data = await KenAll.parseRawCSV(option);
-            if (logger) logger.warn("writing: " + jsonPath);
+            const data = await this.parseRawCSV();
+            this.debug("writing: " + jsonPath);
             const json = JSON.stringify(data).replace(/],/g, "],\n");
             await writeFile(jsonPath, json);
         }
 
-        if (logger) logger.warn("reading: " + jsonPath);
+        this.debug("reading: " + jsonPath);
         const data = await readFile(jsonPath);
         return JSON.parse(data + "");
     }
@@ -125,8 +133,8 @@ export module KenAll {
      * parse CSV file
      */
 
-    export async function readAll(option?: KenAllOptions): Promise<KenAllRow[]> {
-        const rows = await KenAll.readCachedCSV(option);
+    public async readAll(): Promise<KenAllRow[]> {
+        const rows = await this.readCachedCSV();
 
         rows.forEach(row => {
             if (row[5]) {
@@ -139,5 +147,13 @@ export module KenAll {
         });
 
         return rows;
+    }
+
+    /**
+     * parse CSV file
+     */
+
+    public static async readAll(options?: KenAllOptions): Promise<KenAllRow[]> {
+        return new KenAll(options).readAll();
     }
 }
