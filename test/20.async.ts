@@ -1,7 +1,7 @@
 #!/usr/bin/env mocha -R spec
 
 import "mocha";
-import {KenAll} from "../lib/ken_all";
+import {KenAll, KenAllColumns as C, KenAllRow} from "../lib/ken_all";
 
 const assert = require("assert");
 
@@ -11,7 +11,11 @@ describe(TESTNAME, () => {
     it("readAll()", async () => {
         const options = {logger: console};
         const data = await KenAll.readAll(options);
-        assert(data.length > 100000, "should have 100,000 records at least");
-        assert(data.filter(row => row.length > 10).length, "should have more than 100,000 records which have more than 10 columns")
+
+        const row = data.filter(row => row[C.郵便番号] === "1000001").pop() as KenAllRow;
+        assert(row, "1000001 should exist");
+        assert.strictEqual(row[C.都道府県名], "東京都");
+        assert.strictEqual(row[C.市区町村名], "千代田区");
+        assert.strictEqual(row[C.町域名], "千代田");
     });
 });

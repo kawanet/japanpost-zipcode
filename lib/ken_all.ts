@@ -5,11 +5,7 @@ import * as fs from "fs"
 import * as iconv from "iconv-lite"
 import * as JSZip from "jszip"
 
-const zipURL = "http://www.post.japanpost.jp/zipcode/dl/kogaki/zip/ken_all.zip";
-const tmpPath = __dirname.replace(/[^\/]*\/?$/, "tmp/");
-const zipPath = tmpPath + "ken_all.zip";
-const csvName = "KEN_ALL.CSV";
-const jsonPath = tmpPath + "ken_all.json";
+const tmpDir = __dirname.replace(/[^\/]*\/?$/, "tmp/");
 
 const removeKanaSuffix = new RegExp("(ｲｶﾆｹｲｻｲｶﾞﾅｲﾊﾞｱｲ|.*ﾉﾂｷﾞﾆﾊﾞﾝﾁｶﾞｸﾙﾊﾞｱｲ|\(.*?\))$");
 const removeTextSuffix = new RegExp("(以下に掲載がない場合|.*に番地がくる場合|（.*?）)$");
@@ -22,20 +18,74 @@ const access = (path: string): Promise<void> => new Promise((ok, ng) => fs.acces
 
 export type KenAllRow = string[];
 
+/**
+ * @see https://www.post.japanpost.jp/zipcode/dl/readme.html
+ */
+
+export const enum KenAllColumns {
+    "全国地方公共団体コード" = 0,
+    "旧郵便番号",
+    "郵便番号",
+    "都道府県名カナ",
+    "市区町村名カナ",
+    "町域名カナ",
+    "都道府県名",
+    "市区町村名",
+    "町域名",
+    "一町域が二以上の郵便番号で表される場合の表示",
+    "小字毎に番地が起番されている町域の表示",
+    "丁目を有する町域の場合の表示",
+    "一つの郵便番号で二以上の町域を表す場合の表示",
+    "更新の表示",
+    "変更理由",
+}
+
+import C = KenAllColumns;
+
 export interface KenAllLogger {
     warn: (message: string) => void;
 }
 
 export interface KenAllOptions {
     logger?: KenAllLogger;
+    url?: string;
+    zip?: string;
+    csv?: string;
+    json?: string;
+    tmpDir?: string;
 }
 
-export class KenAll {
-    private readonly logger?: KenAllLogger;
+const defaultOptions: KenAllOptions = {
+    logger: undefined,
+    url: "http://www.post.japanpost.jp/zipcode/dl/kogaki/zip/ken_all.zip",
+    zip: "ken_all.zip",
+    csv: "KEN_ALL.CSV",
+    json: "ken_all.json",
+    tmpDir: tmpDir,
+};
+
+/**
+ * 郵便番号データダウンロード（読み仮名データの促音・拗音を小書きで表記するもの）（全国一括）
+ */
+
+export class KenAll implements KenAllOptions {
+    logger?: KenAllLogger;
+    url: string;
+    csv: string;
+    tmpDir: string;
 
     constructor(options?: KenAllOptions) {
-        this.logger = options && options.logger;
+        // TS7017: Element implicitly has an 'any' type because type 'KenAllOptions' has no index signature.
+        const that = this as KenAllOptions;
+        for (const key in defaultOptions) {
+            const k = key as keyof KenAllOptions;
+            that[k] = options && options[k] || defaultOptions[k];
+        }
     }
+
+    /**
+     * console.warn
+     */
 
     protected debug(message: string): void {
         if (this.logger) this.logger.warn(message);
@@ -48,11 +98,11 @@ export class KenAll {
     async fetchZip(): Promise<ArrayBuffer> {
         const req = {
             method: "GET",
-            url: zipURL,
+            url: this.url,
             responseType: "arraybuffer"
         };
 
-        this.debug("loading: " + zipURL);
+        this.debug("loading: " + this.url);
         const res = await axios(req);
         return res.data;
     }
@@ -62,6 +112,8 @@ export class KenAll {
      */
 
     async extractCSV(): Promise<string> {
+        const zipPath = this.tmpDir + "ken_all.zip";
+
         try {
             await access(zipPath);
         } catch (e) {
@@ -73,7 +125,7 @@ export class KenAll {
         this.debug("reading: " + zipPath);
         const data = await readFile(zipPath);
         const zip = await JSZip.loadAsync(data);
-        const ab = await zip.file(csvName).async("arraybuffer");
+        const ab = await zip.file(this.csv).async("arraybuffer");
         const buffer = Buffer.from(ab);
         return iconv.decode(buffer, "CP932");
     }
@@ -92,16 +144,16 @@ export class KenAll {
 
         const index: { [zip: string]: KenAllRow } = {};
         return rows.filter(row => {
-            const zip = row[2];
+            const zip = row[C.郵便番号];
             const prev = index[zip];
             // same city
             if (prev && prev[0] === row[0]) {
                 // continued line
-                const open = prev[8].split("（").length;
-                const close = prev[8].split("）").length;
+                const open = prev[C.町域名].split("（").length;
+                const close = prev[C.町域名].split("）").length;
                 if (open > close) {
-                    prev[5] += row[5];
-                    prev[8] += row[8];
+                    prev[C.町域名カナ] += row[C.町域名カナ];
+                    prev[C.町域名] += row[C.町域名];
                     return false;
                 }
             }
@@ -115,6 +167,8 @@ export class KenAll {
      */
 
     private async readCachedCSV(): Promise<KenAllRow[]> {
+        const jsonPath = this.tmpDir + "ken_all.json";
+
         try {
             await access(jsonPath);
         } catch (e) {
@@ -130,22 +184,27 @@ export class KenAll {
     }
 
     /**
+     * normalize
+     */
+
+    public normalize(row: KenAllRow): void {
+        if (row[C.町域名カナ]) {
+            row[C.町域名カナ] = row[C.町域名カナ].replace(removeKanaSuffix, "");
+        }
+
+        if (row[C.町域名]) {
+            row[C.町域名] = row[C.町域名].replace(removeTextSuffix, "");
+            row[C.町域名] = row[C.町域名].replace(removeChiwariSuffix, "");
+        }
+    }
+
+    /**
      * parse CSV file
      */
 
     public async readAll(): Promise<KenAllRow[]> {
         const rows = await this.readCachedCSV();
-
-        rows.forEach(row => {
-            if (row[5]) {
-                row[5] = row[5].replace(removeKanaSuffix, "");
-            }
-            if (row[8]) {
-                row[8] = row[8].replace(removeTextSuffix, "");
-                row[8] = row[8].replace(removeChiwariSuffix, "");
-            }
-        });
-
+        rows.forEach(row => this.normalize(row));
         return rows;
     }
 
