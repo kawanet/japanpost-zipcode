@@ -4,10 +4,17 @@
   ],
   "compilerOptions": {
     "declaration": true,
+    "emitDeclarationOnly": true,
     "lib": [
       "es2015"
     ],
-    "emitDeclarationOnly": true,
-    "outDir": "."
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "outDir": ".",
+    "skipLibCheck": true,
+    "strictNullChecks": true
   }
 }

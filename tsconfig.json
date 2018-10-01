@@ -8,7 +8,14 @@
       "es2015"
     ],
     "module": "commonjs",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "removeComments": false,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
     "target": "es2016",
     "types": [
       "node"

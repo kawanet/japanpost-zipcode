@@ -17,7 +17,7 @@ const removeChiwariSuffix = new RegExp("第?[０-９]*地割([、～].*?[０-９
 
 // fs.promise
 const readFile = (path: string): Promise<Buffer> => new Promise((ok, ng) => fs.readFile(path, (err, res: Buffer) => (err ? ng(err) : ok(res))));
-const writeFile = (path: string, data): Promise<void> => new Promise((ok, ng) => fs.writeFile(path, data, err => (err ? ng(err) : ok())));
+const writeFile = (path: string, data: ArrayBuffer | string): Promise<void> => new Promise((ok, ng) => fs.writeFile(path, data, err => (err ? ng(err) : ok())));
 const access = (path: string): Promise<void> => new Promise((ok, ng) => fs.access(path, err => (err ? ng(err) : ok())));
 
 export type KenAllRow = string[];
@@ -80,7 +80,7 @@ export module KenAll {
             .map(line => line.split(",")
                 .map(col => col.replace(/^"(.*)"/, "$1")));
 
-        const index = {};
+        const index: { [zip: string]: KenAllRow } = {};
         return rows.filter(row => {
             const zip = row[2];
             const prev = index[zip];
