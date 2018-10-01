@@ -13,11 +13,14 @@ const jsonPath = tmpPath + "ken_all.json";
 
 const removeKanaSuffix = new RegExp("(ｲｶﾆｹｲｻｲｶﾞﾅｲﾊﾞｱｲ|.*ﾉﾂｷﾞﾆﾊﾞﾝﾁｶﾞｸﾙﾊﾞｱｲ|\(.*?\))$");
 const removeTextSuffix = new RegExp("(以下に掲載がない場合|.*に番地がくる場合|（.*?）)$");
+const removeChiwariSuffix = new RegExp("第?[０-９]*地割([、～].*?[０-９]*地割)?$");
 
 // fs.promise
 const readFile = (path: string): Promise<Buffer> => new Promise((ok, ng) => fs.readFile(path, (err, res: Buffer) => (err ? ng(err) : ok(res))));
 const writeFile = (path: string, data): Promise<void> => new Promise((ok, ng) => fs.writeFile(path, data, err => (err ? ng(err) : ok())));
 const access = (path: string): Promise<void> => new Promise((ok, ng) => fs.access(path, err => (err ? ng(err) : ok())));
+
+export type KenAllRow = string[];
 
 export interface KenAllOptions {
     logger?: { warn: (message: string) => void };
@@ -28,7 +31,7 @@ export module KenAll {
      * fetch ZIP file
      */
 
-    export function fetchZip(option?: KenAllOptions) {
+    export async function fetchZip(option?: KenAllOptions): Promise<ArrayBuffer> {
         const logger = option && option.logger;
 
         const req = {
@@ -38,109 +41,103 @@ export module KenAll {
         };
 
         if (logger) logger.warn("loading: " + zipURL);
-        return axios(req).then(res => {
-            return res.data;
-        });
+        const res = await axios(req);
+        return res.data;
     }
 
     /**
      * extract CSV file from ZIP file
      */
 
-    export function extractCSV(option?: KenAllOptions) {
+    export async function extractCSV(option?: KenAllOptions): Promise<string> {
         const logger = option && option.logger;
-        return access(zipPath).catch(() => {
-            return KenAll.fetchZip(option).then(data => {
-                if (logger) logger.warn("writing: " + zipPath);
-                return writeFile(zipPath, data);
-            });
-        }).then(() => {
-            if (logger) logger.warn("reading: " + zipPath);
-            return readFile(zipPath).then(data => {
-                return JSZip.loadAsync(data).then(zip => {
-                    return zip.file(csvName).async("arraybuffer");
-                }).then(data => {
-                    const buffer = Buffer.from(data);
-                    return iconv.decode(buffer, "CP932");
-                });
-            });
-        });
+
+        try {
+            await access(zipPath);
+        } catch (e) {
+            const data = await KenAll.fetchZip(option);
+            if (logger) logger.warn("writing: " + zipPath);
+            await writeFile(zipPath, data);
+        }
+
+        if (logger) logger.warn("reading: " + zipPath);
+        const data = await readFile(zipPath);
+        const zip = await JSZip.loadAsync(data);
+        const ab = await zip.file(csvName).async("arraybuffer");
+        const buffer = Buffer.from(ab);
+        return iconv.decode(buffer, "CP932");
     }
 
     /**
      * parse raw CSV file
      */
 
-    export function parseRawCSV(option?: KenAllOptions) {
-        return KenAll.extractCSV(option).then((data) => {
-            return data.split(/\r?\n/).filter(line => {
-                return !!line;
-            }).map(line => {
-                return line.split(",").map(col => {
-                    return col.replace(/^"(.*)"/, "$1");
-                });
-            });
-        }).then(array => {
-            const index = {};
-            return array.filter(row => {
-                const zip = row[2];
-                const prev = index[zip];
-                // same city
-                if (prev && prev[0] === row[0]) {
-                    // continued line
-                    const open = prev[8].split("（").length;
-                    const close = prev[8].split("）").length;
-                    if (open > close) {
-                        prev[5] += row[5];
-                        prev[8] += row[8];
-                        return false;
-                    }
+    export async function parseRawCSV(option?: KenAllOptions): Promise<KenAllRow[]> {
+        const data = await KenAll.extractCSV(option);
+
+        const rows = data.split(/\r?\n/)
+            .filter(line => line)
+            .map(line => line.split(",")
+                .map(col => col.replace(/^"(.*)"/, "$1")));
+
+        const index = {};
+        return rows.filter(row => {
+            const zip = row[2];
+            const prev = index[zip];
+            // same city
+            if (prev && prev[0] === row[0]) {
+                // continued line
+                const open = prev[8].split("（").length;
+                const close = prev[8].split("）").length;
+                if (open > close) {
+                    prev[5] += row[5];
+                    prev[8] += row[8];
+                    return false;
                 }
-                index[zip] = row;
-                return true;
-            });
-        })
+            }
+            index[zip] = row;
+            return true;
+        });
     }
 
     /**
      * load CSV file from cache when available
      */
 
-    export function readCachedCSV(option?: KenAllOptions) {
+    export async function readCachedCSV(option?: KenAllOptions): Promise<KenAllRow[]> {
         const logger = option && option.logger;
 
-        return access(jsonPath).catch(() => {
-            return KenAll.parseRawCSV(option).then(data => {
-                if (logger) logger.warn("writing: " + jsonPath);
-                const json = JSON.stringify(data).replace(/],/g, "],\n");
-                return writeFile(jsonPath, json);
-            });
-        }).then(() => {
-            if (logger) logger.warn("reading: " + jsonPath);
-            return readFile(jsonPath).then(data => {
-                return JSON.parse(data + "");
-            });
-        });
+        try {
+            await access(jsonPath);
+        } catch (e) {
+            const data = await KenAll.parseRawCSV(option);
+            if (logger) logger.warn("writing: " + jsonPath);
+            const json = JSON.stringify(data).replace(/],/g, "],\n");
+            await writeFile(jsonPath, json);
+        }
+
+        if (logger) logger.warn("reading: " + jsonPath);
+        const data = await readFile(jsonPath);
+        return JSON.parse(data + "");
     }
 
     /**
      * parse CSV file
      */
 
-    export function readAll(option?: KenAllOptions) {
-        return KenAll.readCachedCSV(option).then(array => {
+    export async function readAll(option?: KenAllOptions): Promise<KenAllRow[]> {
+        const rows = await KenAll.readCachedCSV(option);
 
-            array.forEach(row => {
-                if (row[5]) {
-                    row[5] = row[5].replace(removeKanaSuffix, "");
-                }
-                if (row[8]) {
-                    row[8] = row[8].replace(removeTextSuffix, "");
-                    row[8] = row[8].replace(/第?[０-９]*地割([、～].*?[０-９]*地割)?$/, "");
-                }
-            });
-
-            return array;
+        rows.forEach(row => {
+            if (row[5]) {
+                row[5] = row[5].replace(removeKanaSuffix, "");
+            }
+            if (row[8]) {
+                row[8] = row[8].replace(removeTextSuffix, "");
+                row[8] = row[8].replace(removeChiwariSuffix, "");
+            }
         });
+
+        return rows;
     }
 }
