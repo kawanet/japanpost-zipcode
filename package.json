@@ -12,7 +12,9 @@
     "jszip": "^3.1.5"
   },
   "devDependencies": {
+    "@types/mocha": "^5.2.5",
     "@types/node": "^10.11.3",
+    "mocha": "^5.2.0",
     "typescript": "^3.1.1"
   },
   "homepage": "https://github.com/kawanet/japanpost-zipcode#readme",
@@ -30,6 +32,7 @@
   },
   "scripts": {
     "fixpack": "fixpack",
-    "tsc": "./node_modules/.bin/tsc"
+    "tsc": "./node_modules/.bin/tsc",
+    "tsc-watch": "./node_modules/.bin/tsc --watch"
   }
 }
