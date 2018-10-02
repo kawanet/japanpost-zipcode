@@ -36,5 +36,6 @@
     "tsc": "./node_modules/.bin/tsc",
     "tsc-types": "./node_modules/.bin/tsc -p types/types.json",
     "tsc-watch": "./node_modules/.bin/tsc --watch"
-  }
+  },
+  "typings": "types/ken_all.d.ts"
 }
