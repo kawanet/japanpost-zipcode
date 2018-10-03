@@ -72,7 +72,9 @@ const defaultOptions: KenAllOptions = {
 export class KenAll implements KenAllOptions {
     logger?: KenAllLogger;
     url: string;
+    zip: string;
     csv: string;
+    json: string;
     tmpDir: string;
 
     constructor(options?: KenAllOptions) {
