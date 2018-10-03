@@ -35,7 +35,7 @@
     "fixpack": "fixpack",
     "test": "./node_modules/.bin/mocha test",
     "tsc": "./node_modules/.bin/tsc",
-    "tsc-types": "./node_modules/.bin/tsc -p types/types.json",
+    "tsc-types": "./node_modules/.bin/tsc -p types/types.json && perl -i -pe 's/^ *private .*\\n//' types/ken_all.d.ts",
     "tsc-watch": "./node_modules/.bin/tsc --watch",
     "update": "/bin/rm -f tmp/ken_all.* && node -e \"require('./').KenAll.readAll({logger:console})\""
   },

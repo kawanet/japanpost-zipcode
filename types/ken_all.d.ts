@@ -1,7 +1,4 @@
 export declare type KenAllRow = string[];
-/**
- * @see https://www.post.japanpost.jp/zipcode/dl/readme.html
- */
 export declare const enum KenAllColumns {
     "全国地方公共団体コード" = 0,
     "旧郵便番号" = 1,
@@ -30,9 +27,6 @@ export interface KenAllOptions {
     json?: string;
     tmpDir?: string;
 }
-/**
- * 郵便番号データダウンロード（読み仮名データの促音・拗音を小書きで表記するもの）（全国一括）
- */
 export declare class KenAll implements KenAllOptions {
     logger?: KenAllLogger;
     url: string;
@@ -41,36 +35,10 @@ export declare class KenAll implements KenAllOptions {
     json: string;
     tmpDir: string;
     constructor(options?: KenAllOptions);
-    /**
-     * console.warn
-     */
     protected debug(message: string): void;
-    /**
-     * fetch ZIP file
-     */
     fetchZip(): Promise<ArrayBuffer>;
-    /**
-     * extract CSV file from ZIP file
-     */
     extractCSV(): Promise<string>;
-    /**
-     * parse raw CSV file
-     */
-    private parseRawCSV;
-    /**
-     * load CSV file from cache when available
-     */
-    private readCachedCSV;
-    /**
-     * normalize
-     */
     normalize(row: KenAllRow): void;
-    /**
-     * parse CSV file
-     */
     readAll(): Promise<KenAllRow[]>;
-    /**
-     * parse CSV file
-     */
     static readAll(options?: KenAllOptions): Promise<KenAllRow[]>;
 }
