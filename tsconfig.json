@@ -16,7 +16,7 @@
     "removeComments": false,
     "skipLibCheck": true,
     "strictNullChecks": true,
-    "target": "es2016",
+    "target": "es2015",
     "types": [
       "node"
     ]
