@@ -1,5 +1,7 @@
 # Japan Post Zipcode
 
+[![Build Status](https://travis-ci.org/kawanet/japanpost-zipcode.svg?branch=master)](https://travis-ci.org/kawanet/japanpost-zipcode) [![npm version](https://badge.fury.io/js/japanpost-zipcode.svg)](https://badge.fury.io/js/japanpost-zipcode)
+
 ### Synopsis
 
 ```js
@@ -28,6 +30,11 @@ import {KenAll, KenAllColumns as C, KenAllRow} from "japanpost-zipcode";
 ### GitHub
 
 - [https://github.com/kawanet/japanpost-zipcode](https://github.com/kawanet/japanpost-zipcode)
+
+### See Also
+
+- [https://www.post.japanpost.jp/zipcode/dl/kogaki-zip.html](https://www.post.japanpost.jp/zipcode/dl/kogaki-zip.html)
+- [https://github.com/kawanet/jp-zipcode-lookup](https://github.com/kawanet/jp-zipcode-lookup)
 
 ### The MIT License (MIT)
 
