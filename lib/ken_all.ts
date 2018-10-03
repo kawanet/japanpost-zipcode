@@ -10,6 +10,7 @@ const tmpDir = __dirname.replace(/[^\/]*\/?$/, "tmp/");
 const removeKanaSuffix = new RegExp("(ｲｶﾆｹｲｻｲｶﾞﾅｲﾊﾞｱｲ|.*ﾉﾂｷﾞﾆﾊﾞﾝﾁｶﾞｸﾙﾊﾞｱｲ|\(.*?\))$");
 const removeTextSuffix = new RegExp("(以下に掲載がない場合|.*に番地がくる場合|（.*?）)$");
 const removeChiwariSuffix = new RegExp("第?[０-９]*地割([、～].*?[０-９]*地割)?$");
+const removeIchienSuffix = new RegExp("(.+[市区町村])(一円)$");
 
 // fs.promise
 const readFile = (path: string): Promise<Buffer> => new Promise((ok, ng) => fs.readFile(path, (err, res: Buffer) => (err ? ng(err) : ok(res))));
@@ -195,6 +196,7 @@ export class KenAll implements KenAllOptions {
         if (row[C.町域名]) {
             row[C.町域名] = row[C.町域名].replace(removeTextSuffix, "");
             row[C.町域名] = row[C.町域名].replace(removeChiwariSuffix, "");
+            row[C.町域名] = row[C.町域名].replace(removeIchienSuffix, "");
         }
     }
 
