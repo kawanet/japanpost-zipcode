@@ -1,6 +1,7 @@
 # Japan Post Zipcode
 
-[![Build Status](https://travis-ci.org/kawanet/japanpost-zipcode.svg?branch=master)](https://travis-ci.org/kawanet/japanpost-zipcode) [![npm version](https://badge.fury.io/js/japanpost-zipcode.svg)](https://badge.fury.io/js/japanpost-zipcode)
+[![Node.js CI](https://github.com/kawanet/japanpost-zipcode/workflows/Node.js%20CI/badge.svg?branch=main)](https://github.com/kawanet/japanpost-zipcode/actions/)
+[![npm version](https://badge.fury.io/js/japanpost-zipcode.svg)](https://badge.fury.io/js/japanpost-zipcode)
 
 ### Synopsis
 
