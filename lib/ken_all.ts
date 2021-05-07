@@ -1,7 +1,7 @@
 // ken_all
 
 import axios from "axios"
-import * as fs from "fs"
+import {promises as fs} from "fs"
 import * as iconv from "iconv-lite"
 import * as JSZip from "jszip"
 
@@ -11,11 +11,6 @@ const removeKanaSuffix = new RegExp("(ｲｶﾆｹｲｻｲｶﾞﾅｲﾊﾞｱ
 const removeTextSuffix = new RegExp("(以下に掲載がない場合|.*に番地がくる場合|（.*?）)$");
 const removeChiwariSuffix = new RegExp("第?[０-９]*地割([、～].*?[０-９]*地割)?$");
 const removeIchienSuffix = new RegExp("(.+[市区町村])(一円)$");
-
-// fs.promise
-const readFile = (path: string): Promise<Buffer> => new Promise((ok, ng) => fs.readFile(path, (err, res: Buffer) => (err ? ng(err) : ok(res))));
-const writeFile = (path: string, data: ArrayBuffer | string): Promise<void> => new Promise((ok, ng) => fs.writeFile(path, data, err => (err ? ng(err) : ok())));
-const access = (path: string): Promise<void> => new Promise((ok, ng) => fs.access(path, err => (err ? ng(err) : ok())));
 
 export type KenAllRow = string[];
 
@@ -78,8 +73,7 @@ export class KenAll implements KenAllOptions {
     tmpDir: string;
 
     constructor(options?: KenAllOptions) {
-        // TS7017: Element implicitly has an 'any' type because type 'KenAllOptions' has no index signature.
-        const that = this as KenAllOptions;
+        const that = this as any;
         for (const key in defaultOptions) {
             const k = key as keyof KenAllOptions;
             that[k] = options && options[k] || defaultOptions[k];
@@ -98,16 +92,12 @@ export class KenAll implements KenAllOptions {
      * fetch ZIP file
      */
 
-    async fetchZip(): Promise<ArrayBuffer> {
-        const req = {
-            method: "GET",
-            url: this.url,
-            responseType: "arraybuffer"
-        };
-
+    async fetchZip(): Promise<Buffer> {
         this.debug("loading: " + this.url);
-        const res = await axios(req);
-        return res.data;
+        const res = await axios.get<ArrayBuffer>(this.url, {
+            responseType: "arraybuffer"
+        });
+        return Buffer.from(res.data);
     }
 
     /**
@@ -118,18 +108,19 @@ export class KenAll implements KenAllOptions {
         const zipPath = this.tmpDir + "ken_all.zip";
 
         try {
-            await access(zipPath);
+            await fs.access(zipPath);
         } catch (e) {
             const data = await this.fetchZip();
             this.debug("writing: " + zipPath);
-            await writeFile(zipPath, data);
+            await fs.writeFile(zipPath, data);
         }
 
         this.debug("reading: " + zipPath);
-        const data = await readFile(zipPath);
+        const data = await fs.readFile(zipPath);
+        if (!data) return Promise.reject(`empty: ${zipPath}`);
         const zip = await JSZip.loadAsync(data);
-        const ab = await zip.file(this.csv).async("arraybuffer");
-        const buffer = Buffer.from(ab);
+        const ab = await zip.file(this.csv)?.async("arraybuffer");
+        const buffer = Buffer.from(ab!!);
         return iconv.decode(buffer, "CP932");
     }
 
@@ -173,16 +164,16 @@ export class KenAll implements KenAllOptions {
         const jsonPath = this.tmpDir + "ken_all.json";
 
         try {
-            await access(jsonPath);
+            await fs.access(jsonPath);
         } catch (e) {
             const data = await this.parseRawCSV();
             this.debug("writing: " + jsonPath);
             const json = JSON.stringify(data).replace(/],/g, "],\n");
-            await writeFile(jsonPath, json);
+            await fs.writeFile(jsonPath, json);
         }
 
         this.debug("reading: " + jsonPath);
-        const data = await readFile(jsonPath);
+        const data = await fs.readFile(jsonPath);
         return JSON.parse(data + "");
     }
 

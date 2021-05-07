@@ -1,22 +1,22 @@
 {
   "name": "japanpost-zipcode",
   "description": "Japan Post Zipcode",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "@kawanet",
   "bugs": {
     "url": "https://github.com/kawanet/japanpost-zipcode/issues"
   },
   "dependencies": {
-    "axios": "^0.18.0",
-    "iconv-lite": "^0.4.24",
-    "jszip": "^3.1.5"
+    "axios": "^0.21.1",
+    "iconv-lite": "^0.6.2",
+    "jszip": "^3.6.0"
   },
   "devDependencies": {
-    "@types/jszip": "^3.1.4",
-    "@types/mocha": "^5.2.5",
-    "@types/node": "^10.11.3",
-    "mocha": "^5.2.0",
-    "typescript": "^3.1.1"
+    "@types/jszip": "^3.4.0",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^14.14.44",
+    "mocha": "^8.3.2",
+    "typescript": "^4.2.4"
   },
   "files": [
     "LICENSE",
