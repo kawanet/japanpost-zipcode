@@ -18,6 +18,13 @@
     "mocha": "^5.2.0",
     "typescript": "^3.1.1"
   },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "lib/*.js",
+    "tmp/.gitignore",
+    "types/*.d.ts"
+  ],
   "homepage": "https://github.com/kawanet/japanpost-zipcode#readme",
   "keywords": [
     "ajaxzip",
@@ -32,9 +39,10 @@
     "url": "git+https://github.com/kawanet/japanpost-zipcode.git"
   },
   "scripts": {
+    "build": "./node_modules/.bin/tsc",
     "fixpack": "fixpack",
+    "prepack": "npm run build && npm test",
     "test": "./node_modules/.bin/mocha test",
-    "tsc": "./node_modules/.bin/tsc",
     "tsc-types": "./node_modules/.bin/tsc -p types/types.json && perl -i -pe 's/^ *private .*\\n//' types/ken_all.d.ts",
     "tsc-watch": "./node_modules/.bin/tsc --watch",
     "update": "/bin/rm -f tmp/ken_all.* && node -e \"require('./').KenAll.readAll({logger:console})\""
