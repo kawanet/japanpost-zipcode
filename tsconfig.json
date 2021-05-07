@@ -1,12 +1,9 @@
 {
   "include": [
-    "lib/*.ts",
-    "test/*.ts"
+    "lib",
+    "test"
   ],
   "compilerOptions": {
-    "lib": [
-      "es2015"
-    ],
     "module": "commonjs",
     "noImplicitAny": true,
     "noImplicitReturns": true,
@@ -16,7 +13,7 @@
     "removeComments": false,
     "skipLibCheck": true,
     "strictNullChecks": true,
-    "target": "es2015",
+    "target": "es2018",
     "types": [
       "node"
     ]

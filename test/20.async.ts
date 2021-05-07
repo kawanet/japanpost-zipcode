@@ -1,9 +1,8 @@
 #!/usr/bin/env mocha -R spec
 
 import "mocha";
-import {KenAll, KenAllColumns as C, KenAllRow} from "../lib/ken_all";
-
-const assert = require("assert");
+import {strict as assert} from "assert";
+import {KenAll, KenAllColumns as C, KenAllRow} from "../";
 
 const TESTNAME = __filename.split("/").pop() as string;
 
