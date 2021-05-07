@@ -1,9 +1,15 @@
-// ken_all
+/**
+ * japanpost-zipcode
+ *
+ * @see https://www.npmjs.com/package/japanpost-zipcode
+ */
 
 import axios from "axios"
 import {promises as fs} from "fs"
 import * as iconv from "iconv-lite"
 import * as JSZip from "jszip"
+
+import {KenAllColumns as C, KenAllLogger, KenAllOptions} from "../";
 
 const tmpDir = __dirname.replace(/[^\/]*\/?$/, "tmp/");
 
@@ -17,39 +23,6 @@ export type KenAllRow = string[];
 /**
  * @see https://www.post.japanpost.jp/zipcode/dl/readme.html
  */
-
-export const enum KenAllColumns {
-    "全国地方公共団体コード" = 0,
-    "旧郵便番号",
-    "郵便番号",
-    "都道府県名カナ",
-    "市区町村名カナ",
-    "町域名カナ",
-    "都道府県名",
-    "市区町村名",
-    "町域名",
-    "一町域が二以上の郵便番号で表される場合の表示",
-    "小字毎に番地が起番されている町域の表示",
-    "丁目を有する町域の場合の表示",
-    "一つの郵便番号で二以上の町域を表す場合の表示",
-    "更新の表示",
-    "変更理由",
-}
-
-import C = KenAllColumns;
-
-export interface KenAllLogger {
-    warn: (message: string) => void;
-}
-
-export interface KenAllOptions {
-    logger?: KenAllLogger;
-    url?: string;
-    zip?: string;
-    csv?: string;
-    json?: string;
-    tmpDir?: string;
-}
 
 const defaultOptions: KenAllOptions = {
     logger: undefined,

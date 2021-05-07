@@ -1,4 +1,11 @@
+/**
+ * japanpost-zipcode
+ *
+ * @see https://www.npmjs.com/package/japanpost-zipcode
+ */
+
 export declare type KenAllRow = string[];
+
 export declare const enum KenAllColumns {
     "全国地方公共団体コード" = 0,
     "旧郵便番号" = 1,
@@ -16,9 +23,11 @@ export declare const enum KenAllColumns {
     "更新の表示" = 13,
     "変更理由" = 14
 }
+
 export interface KenAllLogger {
     warn: (message: string) => void;
 }
+
 export interface KenAllOptions {
     logger?: KenAllLogger;
     url?: string;
@@ -27,6 +36,7 @@ export interface KenAllOptions {
     json?: string;
     tmpDir?: string;
 }
+
 export declare class KenAll implements KenAllOptions {
     logger?: KenAllLogger;
     url: string;
@@ -34,11 +44,18 @@ export declare class KenAll implements KenAllOptions {
     csv: string;
     json: string;
     tmpDir: string;
+
     constructor(options?: KenAllOptions);
+
     protected debug(message: string): void;
+
     fetchZip(): Promise<ArrayBuffer>;
+
     extractCSV(): Promise<string>;
+
     normalize(row: KenAllRow): void;
+
     readAll(): Promise<KenAllRow[]>;
+
     static readAll(options?: KenAllOptions): Promise<KenAllRow[]>;
 }
