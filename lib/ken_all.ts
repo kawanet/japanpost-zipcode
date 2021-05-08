@@ -6,7 +6,7 @@
 
 import axios from "axios"
 import {promises as fs} from "fs"
-import * as iconv from "iconv-lite"
+import * as iconv from "iconv-cp932"
 import * as JSZip from "jszip"
 
 import {KenAllColumns as C, KenAllLogger, KenAllOptions} from "../";
@@ -26,7 +26,7 @@ export type KenAllRow = string[];
 
 const defaultOptions: KenAllOptions = {
     logger: undefined,
-    url: "http://www.post.japanpost.jp/zipcode/dl/kogaki/zip/ken_all.zip",
+    url: "https://www.post.japanpost.jp/zipcode/dl/kogaki/zip/ken_all.zip",
     zip: "ken_all.zip",
     csv: "KEN_ALL.CSV",
     json: "ken_all.json",
@@ -94,7 +94,7 @@ export class KenAll implements KenAllOptions {
         const zip = await JSZip.loadAsync(data);
         const ab = await zip.file(this.csv)?.async("arraybuffer");
         const buffer = Buffer.from(ab!!);
-        return iconv.decode(buffer, "CP932");
+        return iconv.decode(buffer);
     }
 
     /**
