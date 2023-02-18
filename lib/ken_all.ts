@@ -43,6 +43,7 @@ export class KenAll implements KenAllClass {
     csv: string;
     json: string;
     tmpDir: string;
+    _file?: JSZip.JSZipObject;
 
     constructor(options?: KenAllOptions) {
         const that = this as any;
@@ -82,7 +83,10 @@ export class KenAll implements KenAllClass {
      * Open ZIP file
      */
 
-    private async openZip(): Promise<JSZip> {
+    private async openZipCSV(): Promise<JSZip.JSZipObject> {
+        const {_file} = this;
+        if (_file) return _file;
+
         const zipPath = this.tmpZip();
 
         try {
@@ -96,7 +100,8 @@ export class KenAll implements KenAllClass {
         this.debug("reading: " + zipPath);
         const data = await fs.readFile(zipPath);
         if (!data) return Promise.reject(`empty: ${zipPath}`);
-        return await JSZip.loadAsync(data);
+        const zip = await JSZip.loadAsync(data);
+        return this._file = zip.file(this.csv)!!;
     }
 
     /**
@@ -104,8 +109,8 @@ export class KenAll implements KenAllClass {
      */
 
     async extractCSV(): Promise<string> {
-        const zip = await this.openZip();
-        const ab = await zip.file(this.csv)?.async("arraybuffer")!!;
+        const file = await this.openZipCSV();
+        const ab = await file.async("arraybuffer")!!;
         const buffer = Buffer.from(ab);
         return iconv.decode(buffer);
     }
@@ -115,8 +120,8 @@ export class KenAll implements KenAllClass {
      */
 
     async modifiedAt(): Promise<Date> {
-        const zip = await this.openZip();
-        const modified = zip.file(this.csv)?.date!!;
+        const file = await this.openZipCSV();
+        const modified = file.date;
         this.debug("modified: " + JSON.stringify(modified));
         return modified;
     }
