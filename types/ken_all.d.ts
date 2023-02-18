@@ -47,7 +47,7 @@ export declare class KenAll implements KenAllOptions {
 
     constructor(options?: KenAllOptions);
 
-    protected debug(message: string): void;
+    debug(message: string): void;
 
     fetchZip(): Promise<ArrayBuffer>;
 
@@ -56,6 +56,8 @@ export declare class KenAll implements KenAllOptions {
     normalize(row: KenAllRow): void;
 
     readAll(): Promise<KenAllRow[]>;
+
+    clean(): Promise<void>;
 
     static readAll(options?: KenAllOptions): Promise<KenAllRow[]>;
 }

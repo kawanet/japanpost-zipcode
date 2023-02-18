@@ -10,7 +10,7 @@ import * as JSZip from "jszip"
 import fetch from "node-fetch";
 import * as os from "os";
 
-import {KenAllColumns as C, KenAllLogger, KenAllOptions} from "../";
+import {KenAll as KenAllClass, KenAllColumns as C, KenAllLogger, KenAllOptions} from "../";
 
 const removeKanaSuffix = new RegExp("(ｲｶﾆｹｲｻｲｶﾞﾅｲﾊﾞｱｲ|.*ﾉﾂｷﾞﾆﾊﾞﾝﾁｶﾞｸﾙﾊﾞｱｲ|\(.*?\))$");
 const removeTextSuffix = new RegExp("(以下に掲載がない場合|.*に番地がくる場合|（.*?）)$");
@@ -36,7 +36,7 @@ const defaultOptions: KenAllOptions = {
  * 郵便番号データダウンロード（読み仮名データの促音・拗音を小書きで表記するもの）（全国一括）
  */
 
-export class KenAll implements KenAllOptions {
+export class KenAll implements KenAllClass {
     logger?: KenAllLogger;
     url: string;
     zip: string;
@@ -52,11 +52,19 @@ export class KenAll implements KenAllOptions {
         }
     }
 
+    protected tmpZip(): string {
+        return this.tmpDir + "ken_all.zip";
+    }
+
+    protected tmpJson(): string {
+        return this.tmpDir + "ken_all.json";
+    }
+
     /**
      * console.warn
      */
 
-    protected debug(message: string): void {
+    debug(message: string): void {
         if (this.logger) this.logger.warn(message);
     }
 
@@ -75,7 +83,7 @@ export class KenAll implements KenAllOptions {
      */
 
     async extractCSV(): Promise<string> {
-        const zipPath = this.tmpDir + "ken_all.zip";
+        const zipPath = this.tmpZip();
 
         try {
             await fs.access(zipPath);
@@ -131,7 +139,7 @@ export class KenAll implements KenAllOptions {
      */
 
     private async readCachedCSV(): Promise<KenAllRow[]> {
-        const jsonPath = this.tmpDir + "ken_all.json";
+        const jsonPath = this.tmpJson();
 
         try {
             await fs.access(jsonPath);
@@ -171,6 +179,25 @@ export class KenAll implements KenAllOptions {
         const rows = await this.readCachedCSV();
         rows.forEach(row => this.normalize(row));
         return rows;
+    }
+
+    /**
+     * remove temporary files
+     */
+
+    async clean(): Promise<void> {
+        const removeFile = async (path: string) => {
+            try {
+                await fs.access(path);
+                this.debug("removing: " + path);
+                await fs.rm(path);
+            } catch (e) {
+                //
+            }
+        }
+
+        await removeFile(this.tmpZip());
+        await removeFile(this.tmpJson());
     }
 
     /**
