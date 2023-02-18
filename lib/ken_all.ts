@@ -79,10 +79,10 @@ export class KenAll implements KenAllClass {
     }
 
     /**
-     * extract CSV file from ZIP file
+     * Open ZIP file
      */
 
-    async extractCSV(): Promise<string> {
+    private async openZip(): Promise<JSZip> {
         const zipPath = this.tmpZip();
 
         try {
@@ -96,10 +96,29 @@ export class KenAll implements KenAllClass {
         this.debug("reading: " + zipPath);
         const data = await fs.readFile(zipPath);
         if (!data) return Promise.reject(`empty: ${zipPath}`);
-        const zip = await JSZip.loadAsync(data);
+        return await JSZip.loadAsync(data);
+    }
+
+    /**
+     * extract CSV file from ZIP file
+     */
+
+    async extractCSV(): Promise<string> {
+        const zip = await this.openZip();
         const ab = await zip.file(this.csv)?.async("arraybuffer")!!;
         const buffer = Buffer.from(ab);
         return iconv.decode(buffer);
+    }
+
+    /**
+     * get the last modified time of CSV in ZIP
+     */
+
+    async modifiedAt(): Promise<Date> {
+        const zip = await this.openZip();
+        const modified = zip.file(this.csv)?.date!!;
+        this.debug("modified: " + JSON.stringify(modified));
+        return modified;
     }
 
     /**
@@ -159,7 +178,7 @@ export class KenAll implements KenAllClass {
      * normalize
      */
 
-    public normalize(row: KenAllRow): void {
+    private normalize(row: KenAllRow): void {
         if (row[C.町域名カナ]) {
             row[C.町域名カナ] = row[C.町域名カナ].replace(removeKanaSuffix, "");
         }

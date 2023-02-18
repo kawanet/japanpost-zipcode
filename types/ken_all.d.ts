@@ -49,14 +49,29 @@ export declare class KenAll implements KenAllOptions {
 
     debug(message: string): void;
 
+    /**
+     * fetch ZIP file
+     */
     fetchZip(): Promise<ArrayBuffer>;
 
+    /**
+     * extract CSV file from ZIP file
+     */
     extractCSV(): Promise<string>;
 
-    normalize(row: KenAllRow): void;
+    /**
+     * get the last modified time of CSV in ZIP
+     */
+    modifiedAt(): Promise<Date>;
 
+    /**
+     * parse CSV file
+     */
     readAll(): Promise<KenAllRow[]>;
 
+    /**
+     * remove temporary files
+     */
     clean(): Promise<void>;
 
     static readAll(options?: KenAllOptions): Promise<KenAllRow[]>;
