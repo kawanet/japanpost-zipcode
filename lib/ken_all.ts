@@ -4,14 +4,13 @@
  * @see https://www.npmjs.com/package/japanpost-zipcode
  */
 
-import axios from "axios"
 import {promises as fs} from "fs"
 import * as iconv from "iconv-cp932"
 import * as JSZip from "jszip"
+import fetch from "node-fetch";
+import * as os from "os";
 
-import {KenAllColumns as C, KenAllLogger, KenAllOptions} from "../";
-
-const tmpDir = __dirname.replace(/[^\/]*\/?$/, "tmp/");
+import {KenAll as KenAllClass, KenAllColumns as C, KenAllLogger, KenAllOptions} from "../";
 
 const removeKanaSuffix = new RegExp("(ｲｶﾆｹｲｻｲｶﾞﾅｲﾊﾞｱｲ|.*ﾉﾂｷﾞﾆﾊﾞﾝﾁｶﾞｸﾙﾊﾞｱｲ|\(.*?\))$");
 const removeTextSuffix = new RegExp("(以下に掲載がない場合|.*に番地がくる場合|（.*?）)$");
@@ -30,20 +29,21 @@ const defaultOptions: KenAllOptions = {
     zip: "ken_all.zip",
     csv: "KEN_ALL.CSV",
     json: "ken_all.json",
-    tmpDir: tmpDir,
+    tmpDir: os.tmpdir()?.replace(/\/?$/, "/"),
 };
 
 /**
  * 郵便番号データダウンロード（読み仮名データの促音・拗音を小書きで表記するもの）（全国一括）
  */
 
-export class KenAll implements KenAllOptions {
+export class KenAll implements KenAllClass {
     logger?: KenAllLogger;
     url: string;
     zip: string;
     csv: string;
     json: string;
     tmpDir: string;
+    _file?: JSZip.JSZipObject;
 
     constructor(options?: KenAllOptions) {
         const that = this as any;
@@ -53,11 +53,19 @@ export class KenAll implements KenAllOptions {
         }
     }
 
+    protected tmpZip(): string {
+        return this.tmpDir + "ken_all.zip";
+    }
+
+    protected tmpJson(): string {
+        return this.tmpDir + "ken_all.json";
+    }
+
     /**
      * console.warn
      */
 
-    protected debug(message: string): void {
+    debug(message: string): void {
         if (this.logger) this.logger.warn(message);
     }
 
@@ -67,18 +75,19 @@ export class KenAll implements KenAllOptions {
 
     async fetchZip(): Promise<Buffer> {
         this.debug("loading: " + this.url);
-        const res = await axios.get<ArrayBuffer>(this.url, {
-            responseType: "arraybuffer"
-        });
-        return Buffer.from(res.data);
+        const res = await fetch(this.url);
+        return Buffer.from(await res.arrayBuffer());
     }
 
     /**
-     * extract CSV file from ZIP file
+     * Open ZIP file
      */
 
-    async extractCSV(): Promise<string> {
-        const zipPath = this.tmpDir + "ken_all.zip";
+    private async openZipCSV(): Promise<JSZip.JSZipObject> {
+        const {_file} = this;
+        if (_file) return _file;
+
+        const zipPath = this.tmpZip();
 
         try {
             await fs.access(zipPath);
@@ -92,9 +101,29 @@ export class KenAll implements KenAllOptions {
         const data = await fs.readFile(zipPath);
         if (!data) return Promise.reject(`empty: ${zipPath}`);
         const zip = await JSZip.loadAsync(data);
-        const ab = await zip.file(this.csv)?.async("arraybuffer");
-        const buffer = Buffer.from(ab!!);
+        return this._file = zip.file(this.csv)!!;
+    }
+
+    /**
+     * extract CSV file from ZIP file
+     */
+
+    async extractCSV(): Promise<string> {
+        const file = await this.openZipCSV();
+        const ab = await file.async("arraybuffer")!!;
+        const buffer = Buffer.from(ab);
         return iconv.decode(buffer);
+    }
+
+    /**
+     * get the last modified time of CSV in ZIP
+     */
+
+    async modifiedAt(): Promise<Date> {
+        const file = await this.openZipCSV();
+        const modified = file.date;
+        this.debug("modified: " + JSON.stringify(modified));
+        return modified;
     }
 
     /**
@@ -134,7 +163,7 @@ export class KenAll implements KenAllOptions {
      */
 
     private async readCachedCSV(): Promise<KenAllRow[]> {
-        const jsonPath = this.tmpDir + "ken_all.json";
+        const jsonPath = this.tmpJson();
 
         try {
             await fs.access(jsonPath);
@@ -154,7 +183,7 @@ export class KenAll implements KenAllOptions {
      * normalize
      */
 
-    public normalize(row: KenAllRow): void {
+    private normalize(row: KenAllRow): void {
         if (row[C.町域名カナ]) {
             row[C.町域名カナ] = row[C.町域名カナ].replace(removeKanaSuffix, "");
         }
@@ -174,6 +203,25 @@ export class KenAll implements KenAllOptions {
         const rows = await this.readCachedCSV();
         rows.forEach(row => this.normalize(row));
         return rows;
+    }
+
+    /**
+     * remove temporary files
+     */
+
+    async clean(): Promise<void> {
+        const removeFile = async (path: string) => {
+            try {
+                await fs.access(path);
+                this.debug("removing: " + path);
+                await fs.rm(path);
+            } catch (e) {
+                //
+            }
+        }
+
+        await removeFile(this.tmpZip());
+        await removeFile(this.tmpJson());
     }
 
     /**
