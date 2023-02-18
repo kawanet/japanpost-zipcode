@@ -23,7 +23,6 @@
     "LICENSE",
     "README.md",
     "lib/*.js",
-    "tmp/.gitignore",
     "types/*.d.ts"
   ],
   "homepage": "https://github.com/kawanet/japanpost-zipcode#readme",

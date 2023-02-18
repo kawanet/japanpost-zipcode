@@ -8,10 +8,9 @@ import {promises as fs} from "fs"
 import * as iconv from "iconv-cp932"
 import * as JSZip from "jszip"
 import fetch from "node-fetch";
+import * as os from "os";
 
 import {KenAllColumns as C, KenAllLogger, KenAllOptions} from "../";
-
-const tmpDir = __dirname.replace(/[^\/]*\/?$/, "tmp/");
 
 const removeKanaSuffix = new RegExp("(ｲｶﾆｹｲｻｲｶﾞﾅｲﾊﾞｱｲ|.*ﾉﾂｷﾞﾆﾊﾞﾝﾁｶﾞｸﾙﾊﾞｱｲ|\(.*?\))$");
 const removeTextSuffix = new RegExp("(以下に掲載がない場合|.*に番地がくる場合|（.*?）)$");
@@ -30,7 +29,7 @@ const defaultOptions: KenAllOptions = {
     zip: "ken_all.zip",
     csv: "KEN_ALL.CSV",
     json: "ken_all.json",
-    tmpDir: tmpDir,
+    tmpDir: os.tmpdir()?.replace(/\/?$/, "/"),
 };
 
 /**
