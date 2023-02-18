@@ -4,10 +4,10 @@
  * @see https://www.npmjs.com/package/japanpost-zipcode
  */
 
-import axios from "axios"
 import {promises as fs} from "fs"
 import * as iconv from "iconv-cp932"
 import * as JSZip from "jszip"
+import fetch from "node-fetch";
 
 import {KenAllColumns as C, KenAllLogger, KenAllOptions} from "../";
 
@@ -67,10 +67,8 @@ export class KenAll implements KenAllOptions {
 
     async fetchZip(): Promise<Buffer> {
         this.debug("loading: " + this.url);
-        const res = await axios.get<ArrayBuffer>(this.url, {
-            responseType: "arraybuffer"
-        });
-        return Buffer.from(res.data);
+        const res = await fetch(this.url);
+        return Buffer.from(await res.arrayBuffer());
     }
 
     /**
@@ -92,8 +90,8 @@ export class KenAll implements KenAllOptions {
         const data = await fs.readFile(zipPath);
         if (!data) return Promise.reject(`empty: ${zipPath}`);
         const zip = await JSZip.loadAsync(data);
-        const ab = await zip.file(this.csv)?.async("arraybuffer");
-        const buffer = Buffer.from(ab!!);
+        const ab = await zip.file(this.csv)?.async("arraybuffer")!!;
+        const buffer = Buffer.from(ab);
         return iconv.decode(buffer);
     }
 
