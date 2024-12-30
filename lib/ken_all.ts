@@ -7,7 +7,7 @@
 import {promises as fs} from "fs"
 import * as iconv from "iconv-cp932"
 import * as JSZip from "jszip"
-import fetch from "node-fetch";
+import {fetch} from "node-fetch-native";
 import * as os from "os";
 
 import {KenAll as KenAllClass, KenAllColumns as C, KenAllLogger, KenAllOptions} from "../";
